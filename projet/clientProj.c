@@ -110,6 +110,8 @@ int main(int argc, char const *argv[]) {
         }
     //    strcpy(tampon, "Message du client vers le serveur"); //concaténation d'une chaine de caractère
     //    send(fdSocket, tampon, strlen(tampon), 0); //Envoi d'un bloc de donnée sur la socket
+        printf("/nLettre a proposer");
+        scanf("%s",lettre);
 
 
     }
