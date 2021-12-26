@@ -59,7 +59,7 @@ const char *readLine(FILE *file) {
 }
 
 int lecturelistMots(){
-        if ((fichier1 = open("listeMots", O_RDONLY)) < 0) {
+        if ((fichier1 = open("listeMots.txt", O_RDONLY)) < 0) {
         printf("Erreur ouverture fichier 1\n");
         return -1;
     }
