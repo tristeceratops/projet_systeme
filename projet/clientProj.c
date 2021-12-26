@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #define PORT 6000 //On définit le port à 6000
-#define MAX_BUFFER 1000
+#define MAX_BUFFER 100
 
 
 int ouvrirUneConnexionTcp() {
