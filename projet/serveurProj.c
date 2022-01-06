@@ -8,7 +8,7 @@
 #include <time.h>
 #include <fcntl.h>
 
-#define MAXERREUR 7
+#define MAXERREUR 6
 
 char mot[200] = "";
 int nbMots = 0;
@@ -31,7 +31,7 @@ int randomInt(int borninf,int bornsup)
 void wordPicker(){
     FILE * fichier = fopen("listeMots","r");
      if ( fichier == NULL ) {
-        printf( "Cannot open file %s\n");
+        printf("Cannot open file\n");
         exit( 0 );
     }
     while (fgets(mot,30,fichier) != NULL)
@@ -52,19 +52,19 @@ void wordPicker(){
 void afficherAscii(char * pathname){
     FILE * fichier = fopen(pathname,"r");
      if ( fichier == NULL ) {
-        printf( "Cannot open file %s\n");
+        printf("Cannot open file\n");
         exit( 0 );
     }
     while (fgets(buffer,30,fichier) != NULL)
     {
-        printf(buffer);
+        printf("%s",buffer);
     }
     fclose(fichier);
 }
 
 void hiddenWord(char * word){
     int taille = strlen(word);
-    for (int i = 1; i<taille;i++)
+    for (int i = 0; i<taille-1;i++)
     {
         strcat(motCacher,"-");
     }
@@ -73,23 +73,35 @@ void hiddenWord(char * word){
 
 
 
-void verifLettre(char lettre){
+int verifLettre(char lettre){
     int taille = strlen(mot);
-    for (int i = 1; i<taille;i++)
+    int true = -1;
+    for (int i = 0; i<taille-1;i++)
     {
-        if(mot[i-1] == lettre)
+        if(mot[i] == lettre)
         {
-            motCacher[i-1] == lettre;
+            motCacher[i] = lettre;
+            true = 0;
         }
     }
-    
+    return true;
+}
+
+int verifMot(char * word){
+    int taille = strlen(word);
+    for (int i = 0;i<taille-1;i++){
+        if (strcmp(motCacher,mot)!=0)
+        {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 void demanderLettre(){
     printf("Saisissez une lettre\n");
-    scanf(" %c",lettre);
-    printf("%c",lettre);
-    verifLettre(lettre);
+    scanf(" %c",&lettre);
+
 }
 
 void game(){
@@ -97,12 +109,34 @@ void game(){
     hiddenWord(mot);
     int erreur = 0;
     int trouve = 0;
+    char dessin[200]= "ascii/ascii";
+    char erreurStr[2] = "";
     do 
     {
-        printf(motCacher);
-        printf("%c",mot[0]);
+        if(erreur>0){
+            sprintf(erreurStr,"%d",erreur);
+            strcat(dessin,erreurStr);
+            strcat(dessin,".txt");
+            afficherAscii(dessin);
+        }
+        printf("%s",motCacher);
         demanderLettre();
+        if(verifLettre(lettre)<0)
+        {
+            erreur++;
+        }
+        trouve = verifMot(mot);
     } while (erreur <= MAXERREUR && trouve == 0);
+    if(trouve == 0)
+    {
+        afficherAscii("asciiBad.txt");
+        printf("Dommage !!! Le mot était : %s\n",mot);
+        
+    }
+    else{
+        afficherAscii("asciiGood.txt");
+        printf("Bien joué ! Tu as réussi à trouver le mot : %s\n",mot);
+    }
 }
 
 
