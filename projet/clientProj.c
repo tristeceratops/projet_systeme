@@ -6,63 +6,230 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <time.h>
+#include <fcntl.h>
 
-#define PORT 6000 //On définit le port à 6000
+#define MAXERREUR 6
+#define PORT 6000
 #define MAX_BUFFER 1000
 
+const char *EXIT = "exit";
 
-int ouvrirUneConnexionTcp() {
-    int socketTemp;
-    int longueurAdresse;
+
+
+
+
+char mot[200] = "";
+int nbMots = 0;
+int rndmEntier = 0;
+char buffer[200] = "";
+char motCacher[200] = "";
+int score;
+char lettre;
+
+
+
+
+int randomInt(int borninf,int bornsup)
+{
+    int n;
+    srand((unsigned) time(NULL)); /* MODIF */
+    n = (rand() % (bornsup - borninf +1)) + borninf;
+    return n;
+}
+
+void wordPicker(){
+    FILE * fichier = fopen("listeMots","r");
+     if ( fichier == NULL ) {
+        printf("Cannot open file\n");
+        exit( 0 );
+    }
+    while (fgets(mot,30,fichier) != NULL)
+    {
+        nbMots ++;
+    }
+    
+    rndmEntier =  randomInt(1,nbMots);
+    rewind(fichier);
+    while (fgets(mot,30,fichier) != NULL && nbMots != rndmEntier)
+    {
+            nbMots --;
+    }
+    
+    fclose(fichier);
+}
+
+void afficherAscii(char * pathname){
+    FILE * fichier = fopen(pathname,"r");
+     if ( fichier == NULL ) {
+        printf("Cannot open file\n");
+        exit( 0 );
+    }
+    while (fgets(buffer,30,fichier) != NULL)
+    {
+        printf("%s",buffer);
+    }
+    fclose(fichier);
+}
+
+void hiddenWord(char * word){
+    int taille = strlen(word);
+    for (int i = 0; i<taille-1;i++)
+    {
+        strcat(motCacher,"-");
+    }
+    strcat(motCacher,"\n");
+}
+
+
+
+int verifLettre(char lettre){
+    int taille = strlen(mot);
+    int true = -1;
+    for (int i = 0; i<taille-1;i++)
+    {
+        if(mot[i] == lettre)
+        {
+            motCacher[i] = lettre;
+            true = 0;
+        }
+    }
+    return true;
+}
+
+int verifMot(char * word){
+    int taille = strlen(word);
+    for (int i = 0;i<taille-1;i++){
+        if (strcmp(motCacher,mot)!=0)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void demanderLettre(){
+    printf("Saisissez une lettre\n");
+    scanf(" %c",&lettre);
+
+}
+
+void game(){
+    system("clear");
+    wordPicker();
+    hiddenWord(mot);
+    int erreur = 0;
+    int trouve = 0;
+    char dessin[200]= "ascii/ascii";
+    char erreurStr[2] = "";
+
+    do 
+    {
+        if(erreur>0){
+            sprintf(erreurStr,"%d",erreur);
+            strcat(dessin,erreurStr);
+            strcat(dessin,".txt");
+            afficherAscii(dessin);
+            memset(dessin,0,strlen(dessin));
+            strcat(dessin,"ascii/ascii");
+        }
+        printf("%s",motCacher);
+        demanderLettre();
+        if(verifLettre(lettre)<0)
+        {
+            erreur++;
+        }
+        trouve = verifMot(mot);
+        system("clear");
+    } while (erreur <= MAXERREUR && trouve == 0);
+    score = 1000 * (7-erreur);
+    if(trouve == 0)
+    {
+        afficherAscii("asciiBad.txt");
+        printf("\nDommage !!! Le mot était : %s\n",mot);
+        
+    }
+    else{
+        afficherAscii("asciiGood.txt");
+        printf("\nBien joué ! Tu as réussi à trouver le mot : %s\nTon score est de : %d\n",mot,score);
+    }
+}
+
+void lireMessage(char tampon[]) {
+    printf("Saisir votre peuso :\n");
+    fgets(tampon, MAX_BUFFER, stdin);
+    strtok(tampon, "\n");
+}
+
+int testQuitter(char tampon[]) {
+    return strcmp(tampon, EXIT) == 0;
+}
+
+
+int main(int argc , char const *argv[]) {
+    int fdSocket;
+    int nbRecu;
     struct sockaddr_in coordonneesServeur;
+    int longueurAdresse;
+    char tampon[MAX_BUFFER];
 
-    socketTemp = socket(AF_INET, SOCK_STREAM, 0); //Création d'une socket avec paramètre AF_INET : domaine IPV4 pour client, SOCK_STREAM : TCP, 0 : protocole
+    fdSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (socket < 0) { //Détection erreur création socket
+    if (fdSocket < 0) {
         printf("socket incorrecte\n");
         exit(EXIT_FAILURE);
     }
 
     // On prépare les coordonnées du serveur
     longueurAdresse = sizeof(struct sockaddr_in);
-    memset(&coordonneesServeur, 0x00, longueurAdresse); //memset pour initialiser la zone mémoire avec une valeur, ici 0x00
+    memset(&coordonneesServeur, 0x00, longueurAdresse);
 
-    coordonneesServeur.sin_family = PF_INET; //set up la famille d'adresse à PF_INET (similaire à AF_INET)
+    coordonneesServeur.sin_family = PF_INET;
     // adresse du serveur
-    inet_aton("127.0.0.1", &coordonneesServeur.sin_addr); //Inscrit l'adresse dans l'ordre réseau
+    inet_aton("127.0.0.1", &coordonneesServeur.sin_addr);
     // toutes les interfaces locales disponibles
-    coordonneesServeur.sin_port = htons(PORT); //Affection au port 6000
+    coordonneesServeur.sin_port = htons(PORT);
 
-    if (connect(socketTemp, (struct sockaddr *) &coordonneesServeur, sizeof(coordonneesServeur)) == -1) { //Vérification de la connexion
+    if (connect(fdSocket, (struct sockaddr *) &coordonneesServeur, sizeof(coordonneesServeur)) == -1) {
         printf("connexion impossible\n");
         exit(EXIT_FAILURE);
     }
 
     printf("connexion ok\n");
 
-    return socketTemp;
-}
+    while (1) {
+         
+        lireMessage(tampon);
 
+        if (testQuitter(tampon)) {
 
-int main(int argc, char const *argv[]) {
-    int fdSocket;
-    int nbRecu;
-    char tampon[MAX_BUFFER];
+            send(fdSocket,tampon, strlen(tampon), 0);
+            break; // on quitte la boucle
+        }
 
-    fdSocket = ouvrirUneConnexionTcp();
-
-    printf("Envoi du message au serveur.\n");
-    strcpy(tampon, "Message du client vers le serveur"); //concaténation d'une chaine de caractère
-    send(fdSocket, tampon, strlen(tampon), 0); //Envoi d'un bloc de donnée sur la socket
-
-    nbRecu = recv(fdSocket, tampon, MAX_BUFFER, 0); // on attend la réponse du serveur
-
-    if (nbRecu > 0) { //Si on reçoit la réponse du serveur
-        tampon[nbRecu] = 0;
-        printf("Recu : %s\n", tampon); //On affiche le message du serveur
+        // on envoie le message au serveur
+        send(fdSocket, tampon, strlen(tampon), 0);
+        send(fdSocket, "Brigitte", strlen("Brigitte"), 0);
+        game();
+        break;
+//        // on attend la réponse du serveur
+//        nbRecu = recv(fdSocket, tampon, MAX_BUFFER, 0);
+//
+//        if (nbRecu > 0) {
+//            tampon[nbRecu] = 0;
+//            printf("Recu : %s\n", tampon);
+//
+//            if (testQuitter(tampon)) {
+//                break; // on quitte la boucle
+//            }
+//        }
     }
 
-    close(fdSocket); //Cloture le canal de communication, fermeture de la connexion TCP
+    close(fdSocket);
 
     return EXIT_SUCCESS;
 }
+
+
+
+
