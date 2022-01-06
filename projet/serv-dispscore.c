@@ -73,7 +73,6 @@ int main(int argc, char const *argv[]) {
             printf("erreur de accept\n");
             exit(EXIT_FAILURE);
         }
-
         printf("Client connecté - %s:%d\n",
                inet_ntoa(coordonneesAppelant.sin_addr),
                ntohs(coordonneesAppelant.sin_port));
