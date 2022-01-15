@@ -145,18 +145,18 @@ void game(){
     score = 1000 * (7-erreur);
     if(trouve == 0)
     {
-        afficherAscii("asciiBad.txt");
+        afficherAscii("ascii/asciiBad.txt");
         printf("\nDommage !!! Le mot était : %s\n",mot);
         
     }
     else{
-        afficherAscii("asciiGood.txt");
+        afficherAscii("ascii/asciiGood.txt");
         printf("\nBien joué ! Tu as réussi à trouver le mot : %s\nTon score est de : %d\n",mot,score);
     }
 }
 
 void lireMessage(char tampon[]) {
-    printf("Saisir votre peuso :\n");
+    printf("Saisir votre pseudo :\n");
     fgets(tampon, MAX_BUFFER, stdin);
     strtok(tampon, "\n");
 }
@@ -209,7 +209,6 @@ int main(int argc , char const *argv[]) {
 
         // on envoie le message au serveur
         send(fdSocket, tampon, strlen(tampon), 0);
-        send(fdSocket, "Brigitte", strlen("Brigitte"), 0);
         game();
         break;
 //        // on attend la réponse du serveur

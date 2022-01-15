@@ -77,10 +77,7 @@ int main(int argc, char const *argv[]) {
         printf("Client connecté - %s:%d\n",
                inet_ntoa(coordonneesAppelant.sin_addr),
                ntohs(coordonneesAppelant.sin_port));
-        printf("Pseudo de %s:%d : %s\n",
-                           inet_ntoa(coordonneesAppelant.sin_addr),
-                           ntohs(coordonneesAppelant.sin_port),
-                           tampon);
+
         
         if ((pid = fork()) == 0) {
             close(fdSocketAttente);
@@ -93,7 +90,7 @@ int main(int argc, char const *argv[]) {
 
                 if (nbRecu > 0) {
                     tampon[nbRecu] = 0;
-                    printf("Message de %s:%d : %s\n",
+                    printf("Pseudo de %s:%d : %s\n",
                            inet_ntoa(coordonneesAppelant.sin_addr),
                            ntohs(coordonneesAppelant.sin_port),
                            tampon);
