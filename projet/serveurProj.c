@@ -28,6 +28,7 @@ int randomInt(int borninf,int bornsup)
 }
 
 void wordPicker(){
+    memset(mot,0, strlen(mot));
     FILE * fichier = fopen("listeMots","r");
     if ( fichier == NULL ) {
         printf("Cannot open file\n");
@@ -49,6 +50,7 @@ void wordPicker(){
 }
 
 void hiddenWord(char * word){
+    memset(motCacher,0, strlen(motCacher));
     int taille = strlen(word);
     for (int i = 0; i<taille-1;i++)
     {
@@ -125,13 +127,15 @@ int main(int argc, char const *argv[]) {
         if ((pid = fork()) == 0) {
             close(fdSocketAttente);
 
-            wordPicker();
-            hiddenWord(mot);
-            send(fdSocketCommunication, mot, strlen(mot), 0);
-            send(fdSocketCommunication, motCacher, strlen(motCacher), 0);
+
             while (1) {
+                wordPicker();
+                hiddenWord(mot);
+                send(fdSocketCommunication, mot, strlen(mot), 0);
+                send(fdSocketCommunication, motCacher, strlen(motCacher), 0);
                 // on attend le message du client
                 // la fonction recv est bloquante
+
                 nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
 
                 if (nbRecu > 0) {
@@ -157,17 +161,15 @@ int main(int argc, char const *argv[]) {
                         break; // on quitte la boucle
                     }
                 }
-                nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
 
+                nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
                 if (nbRecu > 0) {
                     tampon[nbRecu] = 0;
                     printf("Joueur %s:%d :rejoue t'il ? %s\n",
                            inet_ntoa(coordonneesAppelant.sin_addr),
                            ntohs(coordonneesAppelant.sin_port),
                            tampon);
-                    if (tampon=='n') {
-                        break; // on quitte la boucle
-                    }
+
                 }
 
 

@@ -180,24 +180,25 @@ int main(int argc , char const *argv[]) {
 
     printf("connexion ok\n");
 
-    nbRecu = recv(fdSocket, mot, MAX_BUFFER, 0);
 
-    if (nbRecu > 0) {
-        mot[nbRecu] = 0;
-        printf("La partie va commencer\n", mot);
-
-    }
-
-    nbRecu = recv(fdSocket, motCacher, MAX_BUFFER, 0);
-
-    if (nbRecu > 0) {
-        motCacher[nbRecu] = 0;
-        printf("Recu : %s\n", motCacher);
-
-    }
 
 
     while (1) {
+        nbRecu = recv(fdSocket, mot, MAX_BUFFER, 0);
+
+        if (nbRecu > 0) {
+            mot[nbRecu] = 0;
+            printf("La partie va commencer\n");
+
+        }
+
+        nbRecu = recv(fdSocket, motCacher, MAX_BUFFER, 0);
+
+        if (nbRecu > 0) {
+            motCacher[nbRecu] = 0;
+            printf("Recu : %s\n", motCacher);
+
+        }
 
         lireMessage(tampon);
 
@@ -212,7 +213,9 @@ int main(int argc , char const *argv[]) {
         game();
         send(fdSocket,tamponScore, strlen(tamponScore),0);
         replay();
+        memset(tamponRejouer,0, strlen(tamponRejouer));
         strcat(tamponRejouer,&valueReplay);
+        printf("%s\n",tamponRejouer);
         send(fdSocket,tamponRejouer, strlen(tamponRejouer),0);
         if(valueReplay=='n'){
             break;
