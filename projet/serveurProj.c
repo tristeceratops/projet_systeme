@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <time.h>
 
 #define PORT 6000
 #define MAX_BUFFER 1000
@@ -19,59 +20,54 @@ char mot[200] = "";
 char motCacher[200] = "";
 int nbMots = 0;
 
-int randomInt(int borninf,int bornsup)
+//tirage aléatoire d'un entier entre deux bornes
+int randomInt(int borninf, int bornsup)
 {
     int n;
-    srand((unsigned) time(NULL)); /* MODIF */
-    n = (rand() % (bornsup - borninf +1)) + borninf;
+    srand((unsigned)time(NULL));
+    n = (rand() % (bornsup - borninf + 1)) + borninf;
     return n;
 }
 
-void wordPicker(){
-    memset(mot,0, strlen(mot));
-    FILE * fichier = fopen("listeMots","r");
-    if ( fichier == NULL ) {
-        printf("Cannot open file\n");
-        exit( 0 );
-    }
-    while (fgets(mot,30,fichier) != NULL)
+//sélectionne un mot aléatoire dans la liste
+void wordPicker()
+{
+    memset(mot, 0, strlen(mot));
+    FILE *fichier = fopen("listeMots", "r");
+    if (fichier == NULL)
     {
-        nbMots ++;
+        printf("Cannot open file\n");
+        exit(0);
+    }
+    while (fgets(mot, 30, fichier) != NULL)
+    {
+        nbMots++;
     }
 
-    rndmEntier =  randomInt(1,nbMots);
+    rndmEntier = randomInt(1, nbMots);
     rewind(fichier);
-    while (fgets(mot,30,fichier) != NULL && nbMots != rndmEntier)
+    while (fgets(mot, 30, fichier) != NULL && nbMots != rndmEntier)
     {
-        nbMots --;
+        nbMots--;
     }
 
     fclose(fichier);
 }
 
-void hiddenWord(char * word){
-    memset(motCacher,0, strlen(motCacher));
+//créé une version cachée du mot
+void hiddenWord(char *word)
+{
+    memset(motCacher, 0, strlen(motCacher));
     int taille = strlen(word);
-    for (int i = 0; i<taille-1;i++)
+    for (int i = 0; i < taille - 1; i++)
     {
-        strcat(motCacher,"-");
+        strcat(motCacher, "-");
     }
-    strcat(motCacher,"\n");
+    strcat(motCacher, "\n");
 }
 
-
-void lireMessage(char tampon[]) {
-    printf("Saisir un message à envoyer :\n");
-    fgets(tampon, MAX_BUFFER, stdin);
-    strtok(tampon, "\n");
-}
-
-int testQuitter(char tampon[]) {
-    return strcmp(tampon, EXIT) == 0;
-}
-
-
-int main(int argc, char const *argv[]) {
+int main(int argc, char const *argv[])
+{
     int fdSocketAttente;
     int fdSocketCommunication;
     struct sockaddr_in coordonneesServeur;
@@ -83,7 +79,8 @@ int main(int argc, char const *argv[]) {
 
     fdSocketAttente = socket(PF_INET, SOCK_STREAM, 0);
 
-    if (fdSocketAttente < 0) {
+    if (fdSocketAttente < 0)
+    {
         printf("socket incorrecte\n");
         exit(EXIT_FAILURE);
     }
@@ -98,12 +95,14 @@ int main(int argc, char const *argv[]) {
     // toutes les interfaces locales disponibles
     coordonneesServeur.sin_port = htons(PORT);
 
-    if (bind(fdSocketAttente, (struct sockaddr *) &coordonneesServeur, sizeof(coordonneesServeur)) == -1) {
+    if (bind(fdSocketAttente, (struct sockaddr *)&coordonneesServeur, sizeof(coordonneesServeur)) == -1)
+    {
         printf("erreur de bind\n");
         exit(EXIT_FAILURE);
     }
 
-    if (listen(fdSocketAttente, 5) == -1) {
+    if (listen(fdSocketAttente, 5) == -1)
+    {
         printf("erreur de listen\n");
         exit(EXIT_FAILURE);
     }
@@ -111,10 +110,12 @@ int main(int argc, char const *argv[]) {
     socklen_t tailleCoord = sizeof(coordonneesAppelant);
 
     int nbClients = 0;
-
-    while (nbClients < MAX_CLIENTS) {
-        if ((fdSocketCommunication = accept(fdSocketAttente, (struct sockaddr *) &coordonneesAppelant,
-                                            &tailleCoord)) == -1) {
+    //test pour ne pas dépasser le nb max de clients
+    while (nbClients < MAX_CLIENTS)
+    {
+        if ((fdSocketCommunication = accept(fdSocketAttente, (struct sockaddr *)&coordonneesAppelant,
+                                            &tailleCoord)) == -1)
+        {
             printf("erreur de accept\n");
             exit(EXIT_FAILURE);
         }
@@ -123,66 +124,54 @@ int main(int argc, char const *argv[]) {
                inet_ntoa(coordonneesAppelant.sin_addr),
                ntohs(coordonneesAppelant.sin_port));
 
-
-        if ((pid = fork()) == 0) {
+        if ((pid = fork()) == 0)
+        {
             close(fdSocketAttente);
 
-
-            while (1) {
+            while (1)
+            {
                 wordPicker();
                 hiddenWord(mot);
                 send(fdSocketCommunication, mot, strlen(mot), 0);
                 send(fdSocketCommunication, motCacher, strlen(motCacher), 0);
-                // on attend le message du client
+                
+                // on attend le pseudo du client
                 // la fonction recv est bloquante
-
                 nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
 
-                if (nbRecu > 0) {
+                if (nbRecu > 0)
+                {
                     tampon[nbRecu] = 0;
                     printf("Pseudo de %s:%d : %s\n",
                            inet_ntoa(coordonneesAppelant.sin_addr),
                            ntohs(coordonneesAppelant.sin_port),
                            tampon);
-
-                    if (testQuitter(tampon)) {
-                        break; // on quitte la boucle
-                    }
                 }
+                //réception du score
                 nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
 
-                if (nbRecu > 0) {
+                if (nbRecu > 0)
+                {
                     tampon[nbRecu] = 0;
                     printf("Score de %s:%d : %s\n",
                            inet_ntoa(coordonneesAppelant.sin_addr),
                            ntohs(coordonneesAppelant.sin_port),
                            tampon);
-                    if (testQuitter(tampon)) {
-                        break; // on quitte la boucle
-                    }
                 }
 
+                //est ce que le joueur rejoue ?
                 nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
-                if (nbRecu > 0) {
+                if (nbRecu > 0)
+                {
                     tampon[nbRecu] = 0;
                     printf("Joueur %s:%d :rejoue t'il ? %s\n",
                            inet_ntoa(coordonneesAppelant.sin_addr),
                            ntohs(coordonneesAppelant.sin_port),
                            tampon);
-
                 }
 
-
-
-
-//                lireMessage(tampon);
-
-
-
-                // on envoie le message au client
                 send(fdSocketCommunication, tampon, strlen(tampon), 0);
             }
-
 
             exit(EXIT_SUCCESS);
         }
@@ -190,14 +179,16 @@ int main(int argc, char const *argv[]) {
         nbClients++;
     }
 
+    //on ferme les sockets
     close(fdSocketCommunication);
     close(fdSocketAttente);
 
-    for (int i = 0; i < MAX_CLIENTS; i++) {
+    //attente de tout les clients
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
         wait(NULL);
     }
 
     printf("Fin du programme.\n");
     return EXIT_SUCCESS;
 }
-
