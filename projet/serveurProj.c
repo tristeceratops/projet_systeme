@@ -157,6 +157,18 @@ int main(int argc, char const *argv[]) {
                         break; // on quitte la boucle
                     }
                 }
+                nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
+
+                if (nbRecu > 0) {
+                    tampon[nbRecu] = 0;
+                    printf("Joueur %s:%d :rejoue t'il ? %s\n",
+                           inet_ntoa(coordonneesAppelant.sin_addr),
+                           ntohs(coordonneesAppelant.sin_port),
+                           tampon);
+                    if (tampon=='n') {
+                        break; // on quitte la boucle
+                    }
+                }
 
 
 

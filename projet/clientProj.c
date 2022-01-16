@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
+#include <ctype.h>
+
 
 #define MAXERREUR 6
 #define PORT 6000
@@ -27,7 +29,8 @@ char motCacher[200] = "";
 int score;
 char lettre;
 char tamponScore[200];
-
+char tamponRejouer[200];
+char valueReplay;
 
 
 void afficherAscii(char * pathname){
@@ -138,7 +141,13 @@ void lireMessage(char tampon[]) {
 int testQuitter(char tampon[]) {
     return strcmp(tampon, EXIT) == 0;
 }
-
+void replay(){
+    do {
+        printf("Voulez vous rejouer ? oui(y)/non(n)\n");
+        scanf(" %c",&valueReplay);
+        valueReplay=tolower(valueReplay);
+    }while(valueReplay!='y'&&valueReplay!='n');
+}
 
 int main(int argc , char const *argv[]) {
     int fdSocket;
@@ -175,7 +184,7 @@ int main(int argc , char const *argv[]) {
 
     if (nbRecu > 0) {
         mot[nbRecu] = 0;
-        printf("La partie commence\n", mot);
+        printf("La partie va commencer\n", mot);
 
     }
 
@@ -202,7 +211,13 @@ int main(int argc , char const *argv[]) {
         send(fdSocket, tampon, strlen(tampon), 0);
         game();
         send(fdSocket,tamponScore, strlen(tamponScore),0);
-        break;
+        replay();
+        strcat(tamponRejouer,&valueReplay);
+        send(fdSocket,tamponRejouer, strlen(tamponRejouer),0);
+        if(valueReplay=='n'){
+            break;
+        }
+
 //        // on attend la réponse du serveur
 //        nbRecu = recv(fdSocket, tampon, MAX_BUFFER, 0);
 //
