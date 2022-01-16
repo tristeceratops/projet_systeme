@@ -14,6 +14,49 @@
 
 const char *EXIT = "exit";
 
+int rndmEntier = 0;
+char mot[200] = "";
+char motCacher[200] = "";
+int nbMots = 0;
+
+int randomInt(int borninf,int bornsup)
+{
+    int n;
+    srand((unsigned) time(NULL)); /* MODIF */
+    n = (rand() % (bornsup - borninf +1)) + borninf;
+    return n;
+}
+
+void wordPicker(){
+    FILE * fichier = fopen("listeMots","r");
+    if ( fichier == NULL ) {
+        printf("Cannot open file\n");
+        exit( 0 );
+    }
+    while (fgets(mot,30,fichier) != NULL)
+    {
+        nbMots ++;
+    }
+
+    rndmEntier =  randomInt(1,nbMots);
+    rewind(fichier);
+    while (fgets(mot,30,fichier) != NULL && nbMots != rndmEntier)
+    {
+        nbMots --;
+    }
+
+    fclose(fichier);
+}
+
+void hiddenWord(char * word){
+    int taille = strlen(word);
+    for (int i = 0; i<taille-1;i++)
+    {
+        strcat(motCacher,"-");
+    }
+    strcat(motCacher,"\n");
+}
+
 
 void lireMessage(char tampon[]) {
     printf("Saisir un message à envoyer :\n");
@@ -78,11 +121,14 @@ int main(int argc, char const *argv[]) {
                inet_ntoa(coordonneesAppelant.sin_addr),
                ntohs(coordonneesAppelant.sin_port));
 
-        
+
         if ((pid = fork()) == 0) {
             close(fdSocketAttente);
-            
-            
+
+            wordPicker();
+            hiddenWord(mot);
+            send(fdSocketCommunication, mot, strlen(mot), 0);
+            send(fdSocketCommunication, motCacher, strlen(motCacher), 0);
             while (1) {
                 // on attend le message du client
                 // la fonction recv est bloquante
@@ -99,18 +145,30 @@ int main(int argc, char const *argv[]) {
                         break; // on quitte la boucle
                     }
                 }
+                nbRecu = recv(fdSocketCommunication, tampon, MAX_BUFFER, 0);
+
+                if (nbRecu > 0) {
+                    tampon[nbRecu] = 0;
+                    printf("Score de %s:%d : %s\n",
+                           inet_ntoa(coordonneesAppelant.sin_addr),
+                           ntohs(coordonneesAppelant.sin_port),
+                           tampon);
+                    if (testQuitter(tampon)) {
+                        break; // on quitte la boucle
+                    }
+                }
+
+
+
 
 //                lireMessage(tampon);
 
-                if (testQuitter(tampon)) {
-                    send(fdSocketCommunication, tampon, strlen(tampon), 0);
-                    break; // on quitte la boucle
-                }
+
 
                 // on envoie le message au client
                 send(fdSocketCommunication, tampon, strlen(tampon), 0);
             }
-            
+
 
             exit(EXIT_SUCCESS);
         }
@@ -128,3 +186,4 @@ int main(int argc, char const *argv[]) {
     printf("Fin du programme.\n");
     return EXIT_SUCCESS;
 }
+

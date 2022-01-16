@@ -26,42 +26,13 @@ char buffer[200] = "";
 char motCacher[200] = "";
 int score;
 char lettre;
+char tamponScore[200];
 
 
-
-
-int randomInt(int borninf,int bornsup)
-{
-    int n;
-    srand((unsigned) time(NULL)); /* MODIF */
-    n = (rand() % (bornsup - borninf +1)) + borninf;
-    return n;
-}
-
-void wordPicker(){
-    FILE * fichier = fopen("listeMots","r");
-     if ( fichier == NULL ) {
-        printf("Cannot open file\n");
-        exit( 0 );
-    }
-    while (fgets(mot,30,fichier) != NULL)
-    {
-        nbMots ++;
-    }
-    
-    rndmEntier =  randomInt(1,nbMots);
-    rewind(fichier);
-    while (fgets(mot,30,fichier) != NULL && nbMots != rndmEntier)
-    {
-            nbMots --;
-    }
-    
-    fclose(fichier);
-}
 
 void afficherAscii(char * pathname){
     FILE * fichier = fopen(pathname,"r");
-     if ( fichier == NULL ) {
+    if ( fichier == NULL ) {
         printf("Cannot open file\n");
         exit( 0 );
     }
@@ -116,14 +87,14 @@ void demanderLettre(){
 
 void game(){
     system("clear");
-    wordPicker();
-    hiddenWord(mot);
+    // wordPicker();
+    // hiddenWord(mot);
     int erreur = 0;
     int trouve = 0;
     char dessin[200]= "ascii/ascii";
     char erreurStr[2] = "";
 
-    do 
+    do
     {
         if(erreur>0){
             sprintf(erreurStr,"%d",erreur);
@@ -147,11 +118,14 @@ void game(){
     {
         afficherAscii("ascii/asciiBad.txt");
         printf("\nDommage !!! Le mot était : %s\n",mot);
-        
+
     }
     else{
         afficherAscii("ascii/asciiGood.txt");
         printf("\nBien joué ! Tu as réussi à trouver le mot : %s\nTon score est de : %d\n",mot,score);
+        sprintf(tamponScore,"%d",score);
+        strtok(tamponScore, "\n");
+
     }
 }
 
@@ -197,8 +171,25 @@ int main(int argc , char const *argv[]) {
 
     printf("connexion ok\n");
 
+    nbRecu = recv(fdSocket, mot, MAX_BUFFER, 0);
+
+    if (nbRecu > 0) {
+        mot[nbRecu] = 0;
+        printf("La partie commence\n", mot);
+
+    }
+
+    nbRecu = recv(fdSocket, motCacher, MAX_BUFFER, 0);
+
+    if (nbRecu > 0) {
+        motCacher[nbRecu] = 0;
+        printf("Recu : %s\n", motCacher);
+
+    }
+
+
     while (1) {
-         
+
         lireMessage(tampon);
 
         if (testQuitter(tampon)) {
@@ -210,6 +201,7 @@ int main(int argc , char const *argv[]) {
         // on envoie le message au serveur
         send(fdSocket, tampon, strlen(tampon), 0);
         game();
+        send(fdSocket,tamponScore, strlen(tamponScore),0);
         break;
 //        // on attend la réponse du serveur
 //        nbRecu = recv(fdSocket, tampon, MAX_BUFFER, 0);
